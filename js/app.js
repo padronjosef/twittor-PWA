@@ -1,7 +1,7 @@
 if (navigator.serviceWorker) {
   const url = window.location.href
   const swLocation = url.includes('localhost')
-    ? swLocation = '/sw.js'
+    ? 'sw.js'
     : 'twittor-PWA/sw.js'
 
   navigator.serviceWorker.register(swLocation)
