@@ -1,5 +1,10 @@
 if (navigator.serviceWorker) {
-  navigator.serviceWorker.register('./sw.js')
+  const url = window.location.href
+  const swLocation = url.includes('localhost')
+    ? swLocation = '/sw.js'
+    : 'twittor-PWA/sw.js'
+
+  navigator.serviceWorker.register(swLocation)
 }
 
 // Referencias de jQuery
