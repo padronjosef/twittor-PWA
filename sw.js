@@ -26,6 +26,18 @@ const APP_SHELL_INMUTABLE = [
   'js/libs/jquery.js',
 ];
 
+function clearCache(cacheName, numeroItems) {
+  caches.open(cacheName)
+    .then(cache => cache.keys()
+      .then(keys => {
+        if (keys.length > numeroItems) {
+          cache.delete(keys[0])
+            .then(clearCache(cacheName, numeroItems))
+        }
+      })
+    )
+}
+
 self.addEventListener('install', event => {
   const cacheStatic = caches.open(CACHE_STATIC).then(cache => cache.addAll(APP_SHELL))
   const cacheInmutable = caches.open(CACHE_INMUTABLE).then(cache => cache.addAll(APP_SHELL_INMUTABLE))
@@ -47,10 +59,23 @@ self.addEventListener('activate', event => {
 self.addEventListener('fetch', event => {
   if (event.request.url.includes('chrome-extension')) return
 
-  const response = caches.match(event.request).then(res => {
-    if (res) return res
-    return fetch(event.request).then(newRes => updateDynamicCache(CACHE_DYNAMIC, event.request, newRes))
-  })
+  const res = caches.match(event.request)
+    .then(res => {
+      if (res) return res
 
-  event.respondWith(response)
+      // file does'nt exists 
+      return fetch(event.request).then(newRes => {
+        caches.open(CACHE_DYNAMIC).then(cache => {
+          cache.put(event.request, newRes)
+          clearCache(CACHE_DYNAMIC, 50)
+        })
+        return newRes.clone()
+      }).catch(() => {
+        if (event.request.headers.get('accept').includes('text/html')) {
+          return caches.match('/pages/offline.html')
+        }
+      })
+    })
+
+  event.respondWith(res)
 })
